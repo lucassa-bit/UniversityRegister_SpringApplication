@@ -64,7 +64,8 @@ public class Student extends UserParent {
     }
 
     public SubjectParticipantsSendDTO toSendDTO() {
-        return new SubjectParticipantsSendDTO(id, name, email, id_number, login, password, userType, email, course,
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        return new SubjectParticipantsSendDTO(id, name, email, id_number, login, password, userType, birthDate.format(format), course,
                 registerCode);
     }
 

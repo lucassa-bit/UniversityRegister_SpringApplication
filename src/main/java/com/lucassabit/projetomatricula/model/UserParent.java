@@ -103,7 +103,8 @@ public class UserParent {
     }
 
     public UserSendDTO toSendDTO() {
-        return new UserSendDTO(id, name, email, id_number, userType, email);
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        return new UserSendDTO(id, name, email, id_number, userType, birthDate.format(format));
     }
 
     public Integer getId() {
