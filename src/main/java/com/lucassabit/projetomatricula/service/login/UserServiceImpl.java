@@ -9,13 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.lucassabit.projetomatricula.dto.client.SubjectParticipants.SubjectParticipantsCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.SubjectParticipants.SubjectParticipantsEditDTO;
-import com.lucassabit.projetomatricula.dto.client.User.UserCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.User.UserEditDTO;
-import com.lucassabit.projetomatricula.dto.send.SubjectParticipantsSendDTO;
+import com.lucassabit.projetomatricula.dto.client.user.StudentCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.StudentEditDTO;
+import com.lucassabit.projetomatricula.dto.client.user.TeacherCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.TeacherEditDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserEditDTO;
+import com.lucassabit.projetomatricula.dto.send.StudentSendDTO;
+import com.lucassabit.projetomatricula.dto.send.TeacherSendDTO;
 import com.lucassabit.projetomatricula.dto.send.UserSendDTO;
-import com.lucassabit.projetomatricula.enumerators.UserType;
 import com.lucassabit.projetomatricula.error.AccessDeniedException;
 import com.lucassabit.projetomatricula.error.course.CourseDoesntExistException;
 import com.lucassabit.projetomatricula.error.login.DoesntExistUserTypeException;
@@ -24,18 +26,22 @@ import com.lucassabit.projetomatricula.error.login.LoginAlreadyExistsException;
 import com.lucassabit.projetomatricula.error.login.UserDoestExistException;
 import com.lucassabit.projetomatricula.model.Course;
 import com.lucassabit.projetomatricula.model.Grade;
+import com.lucassabit.projetomatricula.model.Project;
 import com.lucassabit.projetomatricula.model.Student;
 import com.lucassabit.projetomatricula.model.Subject;
 import com.lucassabit.projetomatricula.model.Teacher;
 import com.lucassabit.projetomatricula.model.UserParent;
+import com.lucassabit.projetomatricula.model.Worker;
 import com.lucassabit.projetomatricula.model.Secretary;
-import com.lucassabit.projetomatricula.repository.CourseRepository;
-import com.lucassabit.projetomatricula.repository.GeneralUserRepository;
-import com.lucassabit.projetomatricula.repository.GradeRepository;
-import com.lucassabit.projetomatricula.repository.StudentRepository;
-import com.lucassabit.projetomatricula.repository.SubjectRepository;
-import com.lucassabit.projetomatricula.repository.TeacherRepository;
-import com.lucassabit.projetomatricula.repository.SecretaryRepository;
+import com.lucassabit.projetomatricula.repository.general.CourseRepository;
+import com.lucassabit.projetomatricula.repository.general.GradeRepository;
+import com.lucassabit.projetomatricula.repository.general.ProjectRepository;
+import com.lucassabit.projetomatricula.repository.general.SubjectRepository;
+import com.lucassabit.projetomatricula.repository.general.user.GeneralUserRepository;
+import com.lucassabit.projetomatricula.repository.general.user.SecretaryRepository;
+import com.lucassabit.projetomatricula.repository.general.user.TeacherRepository;
+import com.lucassabit.projetomatricula.repository.student.StudentRepository;
+import com.lucassabit.projetomatricula.repository.student.WorkerRepository;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -54,10 +60,14 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private CourseRepository cRepository;
     @Autowired
+    private ProjectRepository pRepository;
+    @Autowired
+    private WorkerRepository wRepository;
+    @Autowired
     private PasswordEncoder pEncoder;
 
     @Override
-    public void createNewUsuario(UserCreateDTO dto) throws LoginAlreadyExistsException, EncodingPasswordException {
+    public void createNewSecretary(UserCreateDTO dto) throws LoginAlreadyExistsException, EncodingPasswordException {
         if (gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getLogin())) {
             throw new LoginAlreadyExistsException(dto.getLogin());
         }
@@ -66,9 +76,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void createNewUsuario(SubjectParticipantsCreateDTO dto, UserType userType)
-            throws LoginAlreadyExistsException, EncodingPasswordException, CourseDoesntExistException,
-            DoesntExistUserTypeException {
+    public void createNewStudent(StudentCreateDTO dto)
+            throws EncodingPasswordException, LoginAlreadyExistsException, CourseDoesntExistException {
         Optional<Course> course = cRepository.findByName(dto.getCourse());
 
         if (!course.isPresent())
@@ -76,149 +85,99 @@ public class UserServiceImpl implements UserService {
         if (gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getLogin())) {
             throw new LoginAlreadyExistsException(dto.getLogin());
         }
+
         LocalDate today = LocalDate.now();
         int id = course.get().getId();
-
         String registerCode = (today.get(ChronoField.YEAR) + "").substring(2)
                 + (today.get(ChronoField.MONTH_OF_YEAR) <= 6 ? "1" : "2")
-                + ("0".repeat(3 - ((id) + "").length()) + id);
+                + ("2" + "0".repeat(2 - ((id) + "").length()) + id);
 
-        switch (userType) {
-            case STUDENT:
-                Student saveStudent = sRepository.save(Student.fromCreateDto(dto, course.get(), pEncoder));
-                int idStudent = saveStudent.getId();
-                saveStudent.setRegistration(registerCode + formatId(idStudent));
-                saveStudent = sRepository.save(saveStudent);
-                course.get().getStudents().add(saveStudent);
-                cRepository.save(course.get());
-                break;
-            case TEACHER:
-                Teacher saveTeacher = tRepository.save(Teacher.fromCreateDto(dto, course.get(), pEncoder));
-                int idTeacher = saveTeacher.getId();
-                saveTeacher.setRegistration(registerCode + formatId(idTeacher));
-                tRepository.save(saveTeacher);
-                course.get().getTeachers().add(saveTeacher);
-                cRepository.save(course.get());
-                break;
-            default:
-                throw new DoesntExistUserTypeException();
-        }
+        Student saveStudent = sRepository.save(Student.fromCreateDto(dto, course.get(), pEncoder));
+        int idStudent = saveStudent.getId();
+        saveStudent.setRegistration(registerCode + formatId(idStudent));
+        saveStudent = sRepository.save(saveStudent);
+        course.get().getStudents().add(saveStudent);
+        cRepository.save(course.get());
     }
 
     @Override
-    public List<UserSendDTO> pickAllUsers() {
+    public void createNewTeacher(TeacherCreateDTO dto)
+            throws CourseDoesntExistException, LoginAlreadyExistsException, EncodingPasswordException {
+        Optional<Course> course = cRepository.findByName(dto.getCourse());
+
+        if (!course.isPresent())
+            throw new CourseDoesntExistException(dto.getCourse());
+        if (gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getLogin())) {
+            throw new LoginAlreadyExistsException(dto.getLogin());
+        }
+
+        LocalDate today = LocalDate.now();
+        int id = course.get().getId();
+        String registerCode = (today.get(ChronoField.YEAR) + "").substring(2)
+                + (today.get(ChronoField.MONTH_OF_YEAR) <= 6 ? "1" : "2")
+                + ("1" + "0".repeat(2 - ((id) + "").length()) + id);
+
+        Teacher saveTeacher = tRepository.save(Teacher.fromCreateDto(dto, course.get(), pEncoder));
+        int idTeacher = saveTeacher.getId();
+
+        saveTeacher.setRegistration(registerCode + formatId(idTeacher));
+        course.get().getTeachers().add(saveTeacher);
+
+        tRepository.save(saveTeacher);
+        cRepository.save(course.get());
+    }
+
+    @Override
+    public List<UserSendDTO> pickAllSecretaries() {
         return scRepository.findAll().parallelStream().map((value) -> value.toSendDTO()).toList();
     }
 
     @Override
-    public List<SubjectParticipantsSendDTO> pickAllUsers(String course, UserType userT)
-            throws CourseDoesntExistException {
-
-        return userT.equals(UserType.STUDENT)
-                ? sRepository.findAll().parallelStream().filter((value) -> value.getCourse().getName().equals(course))
-                        .map((value) -> value.toSendDTO()).sorted((a, b) -> compareName(a.getName(), b.getName()))
-                        .toList()
-                : tRepository.findAll().parallelStream().filter((value) -> value.getCourse().getName().equals(course))
-                        .map((value) -> value.toSendDTO()).sorted((a, b) -> compareName(a.getName(), b.getName()))
-                        .toList();
+    public List<StudentSendDTO> pickAllStudents(String course) {
+        return sRepository.findAll().parallelStream().filter((value) -> value.getCourse().getName().equals(course))
+                .map((value) -> value.toSendDTO()).sorted((a, b) -> compareName(a.getName(), b.getName()))
+                .toList();
     }
 
     @Override
-    public void editarUsuario(UserEditDTO dto)
-            throws UserDoestExistException, LoginAlreadyExistsException, AccessDeniedException {
-        if (dto.getId() == 1)
-            throw new AccessDeniedException();
+    public List<TeacherSendDTO> pickAllTeachers(String course) {
+        return tRepository.findAll().parallelStream().filter((value) -> value.getCourse().getName().equals(course))
+                .map((value) -> value.toSendDTO()).sorted((a, b) -> compareName(a.getName(), b.getName()))
+                .toList();
+    }
 
-        Optional<Secretary> user = scRepository.findById(dto.getId());
+    @Override
+    public UserSendDTO getSecretaryById(Integer id) throws UserDoestExistException {
+        Optional<Secretary> user = scRepository.findById(id);
 
         if (!user.isPresent())
-            throw new UserDoestExistException(dto.getName());
-        if (dto.getlogin() != null && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
-            throw new LoginAlreadyExistsException(dto.getlogin());
+            throw new UserDoestExistException(id + "");
 
-        scRepository.save(user.get().fromEditDto(dto, pEncoder));
+        return user.get().toSendDTO();
     }
 
     @Override
-    public void editarUsuario(SubjectParticipantsEditDTO dto, UserType userType)
-            throws LoginAlreadyExistsException, EncodingPasswordException, CourseDoesntExistException,
-            UserDoestExistException, DoesntExistUserTypeException {
-        Optional<Course> course = cRepository.findByName(dto.getCourse());
+    public StudentSendDTO getStudentById(Integer id) throws UserDoestExistException {
+        Optional<Student> userStudent = sRepository.findById(id);
 
-        if (dto.getCourse() != null && !course.isPresent())
-            throw new CourseDoesntExistException(dto.getName());
+        if (userStudent.isPresent())
+            throw new UserDoestExistException(id + "");
 
-        switch (userType) {
-            case STUDENT: {
-                Optional<Student> user = sRepository.findById(dto.getId());
-
-                if (!user.isPresent())
-                    throw new UserDoestExistException(dto.getName());
-                if (!user.get().getLogin().equals(dto.getlogin())
-                        && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
-                    throw new LoginAlreadyExistsException(dto.getlogin());
-
-                if (user.get().getCourse().getId() != course.get().getId()) {
-                    user.get().getCourse().getStudents().remove(user.get());
-
-                    Student save = sRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
-                    course.get().getStudents().add(save);
-
-                    for (Grade grade : save.getSubjects()) {
-                        save.getSubjects().remove(grade);
-
-                        Subject subject = grade.getSubject();
-                        subject.getStudents().remove(grade);
-
-                        sbRepository.save(subject);
-                        grRepository.delete(grade);
-                    }
-
-                    cRepository.save(course.get());
-                    sRepository.save(save);
-                } else {
-                    sRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
-                }
-                break;
-            }
-            case TEACHER: {
-                Optional<Teacher> user = tRepository.findById(dto.getId());
-
-                if (!user.isPresent())
-                    throw new UserDoestExistException(dto.getName());
-                if (!user.get().getLogin().equals(dto.getlogin())
-                        && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
-                    throw new LoginAlreadyExistsException(dto.getlogin());
-                if (user.get().getCourse().getId() != course.get().getId()) {
-                    user.get().getCourse().getTeachers().remove(user.get());
-
-                    Teacher save = tRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
-                    course.get().getTeachers().add(save);
-                    cRepository.save(course.get());
-
-                    for (Subject subject : save.getSubjects()) {
-                        subject.setTeacher(null);
-                        save.getSubjects().remove(subject);
-
-                        sbRepository.save(subject);
-                    }
-
-                    cRepository.save(course.get());
-                    tRepository.save(save);
-                } else {
-                    tRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
-                }
-                break;
-            }
-            default:
-                throw new DoesntExistUserTypeException();
-
-        }
+        return userStudent.get().toSendDTO();
     }
 
     @Override
-    public UserSendDTO getUsuarioByLogin(String login)
-            throws UserDoestExistException, DoesntExistUserTypeException {
+    public TeacherSendDTO getTeacherById(Integer id) throws UserDoestExistException {
+        Optional<Teacher> user = tRepository.findById(id);
+
+        if (user.isPresent())
+            throw new UserDoestExistException(id + "");
+
+        return user.get().toSendDTO();
+    }
+
+    @Override
+    public UserSendDTO getUsuarioByLogin(String login) throws UserDoestExistException, DoesntExistUserTypeException {
         Optional<UserParent> user = gRepository.findByLoginIgnoreCase(login);
         if (!user.isPresent())
             throw new UserDoestExistException(login);
@@ -238,82 +197,171 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUsuario(int id)
-            throws AccessDeniedException, DoesntExistUserTypeException, UserDoestExistException {
-        if (id == 1)
+    public void editSecretary(UserEditDTO dto, int id_user)
+            throws AccessDeniedException, UserDoestExistException, LoginAlreadyExistsException {
+        if (id_user == 1)
             throw new AccessDeniedException();
 
+        Optional<Secretary> user = scRepository.findById(id_user);
+
+        if (!user.isPresent())
+            throw new UserDoestExistException(dto.getName());
+        if (dto.getlogin() != null && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
+            throw new LoginAlreadyExistsException(dto.getlogin());
+
+        scRepository.save(user.get().fromEditDto(dto, pEncoder));
+    }
+
+    @Override
+    public void editStudent(StudentEditDTO dto, int id_user)
+            throws LoginAlreadyExistsException, UserDoestExistException, CourseDoesntExistException {
+        Optional<Course> course = Optional.empty();
+
+        if (dto.getCourse() != null) {
+            course = cRepository.findByName(dto.getCourse());
+
+            if (dto.getCourse() != null && !course.isPresent())
+                throw new CourseDoesntExistException(dto.getName());
+        }
+
+        Optional<Student> user = sRepository.findById(id_user);
+
+        if (!user.isPresent())
+            throw new UserDoestExistException(dto.getName());
+        if (dto.getlogin() != null
+                && !user.get().getLogin().equals(dto.getlogin())
+                && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
+            throw new LoginAlreadyExistsException(dto.getlogin());
+
+        if (course.isPresent()
+                && user.get().getCourse().getId() != course.get().getId()) {
+            user.get().getCourse().getStudents().remove(user.get());
+
+            Student save = sRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
+            course.get().getStudents().add(save);
+
+            for (Grade grade : save.getSubjects()) {
+                save.getSubjects().remove(grade);
+
+                Subject subject = grade.getSubject();
+                subject.getStudents().remove(grade);
+
+                sbRepository.save(subject);
+                grRepository.delete(grade);
+            }
+
+            cRepository.save(course.get());
+            sRepository.save(save);
+        } else {
+            sRepository.save(user.get().fromEditDto(dto, null, pEncoder));
+        }
+    }
+
+    @Override
+    public void editTeacher(TeacherEditDTO dto, int id_user)
+            throws CourseDoesntExistException, UserDoestExistException, LoginAlreadyExistsException {
+        Optional<Course> course = Optional.empty();
+
+        if (dto.getCourse() != null) {
+            course = cRepository.findByName(dto.getCourse());
+
+            if (dto.getCourse() != null && !course.isPresent())
+                throw new CourseDoesntExistException(dto.getName());
+        }
+
+        Optional<Teacher> user = tRepository.findById(id_user);
+
+        if (!user.isPresent())
+            throw new UserDoestExistException(dto.getName());
+        if (dto.getlogin() != null
+                && !user.get().getLogin().equals(dto.getlogin())
+                && gRepository.existsByLoginIgnoreCaseOrderByNameAsc(dto.getlogin()))
+            throw new LoginAlreadyExistsException(dto.getlogin());
+
+        if (course.isPresent()
+                && user.get().getCourse().getId() != course.get().getId()) {
+            user.get().getCourse().getTeachers().remove(user.get());
+
+            Teacher save = tRepository.save(user.get().fromEditDto(dto, course.get(), pEncoder));
+            course.get().getTeachers().add(save);
+            cRepository.save(course.get());
+
+            for (Subject subject : save.getSubjects()) {
+                subject.setTeacher(null);
+                save.getSubjects().remove(subject);
+
+                sbRepository.save(subject);
+            }
+
+            cRepository.save(course.get());
+            tRepository.save(save);
+        } else {
+            tRepository.save(user.get().fromEditDto(dto, null, pEncoder));
+        }
+    }
+
+    @Override
+    public void deleteSecretary(int id) throws UserDoestExistException {
         Optional<UserParent> user = gRepository.findById(id);
 
         if (!user.isPresent())
             throw new UserDoestExistException("usuario com o id " + id);
 
-        switch (user.get().getUserType()) {
-            case STUDENT: {
-                Optional<Student> userStudent = sRepository.findById(id);
-
-                Course course = userStudent.get().getCourse();
-                course.getStudents().remove(user.get());
-
-                for (Grade grade : userStudent.get().getSubjects()) {
-                    Subject subject = grade.getSubject();
-                    subject.getStudents().remove(grade);
-
-                    sbRepository.save(subject);
-                    grRepository.delete(grade);
-                }
-
-                cRepository.save(course);
-                sRepository.delete(userStudent.get());
-
-            }
-            case TEACHER: {
-                Optional<Teacher> userTeacher = tRepository.findById(id);
-                Course course = user.get().getCourse();
-                course.getTeachers().remove(user.get());
-                cRepository.save(course);
-
-                for (Subject subject : userTeacher.get().getSubjects()) {
-                    subject.setTeacher(null);
-                    sbRepository.save(subject);
-                }
-
-                cRepository.save(course);
-                tRepository.delete(userTeacher.get());
-            }
-            case SECRETARY: {
-                gRepository.delete(user.get());
-                break;
-            }
-            default:
-                throw new DoesntExistUserTypeException();
-        }
+        gRepository.delete(user.get());
 
     }
 
     @Override
-    public UserSendDTO getUsuarioById(Integer id, UserType userT)
-            throws UserDoestExistException, DoesntExistUserTypeException {
-        if (userT.equals(UserType.SECRETARY)) {
-            Optional<Secretary> user = scRepository.findById(id);
+    public void deleteTeacher(int id) throws UserDoestExistException {
+        Optional<Teacher> userTeacher = tRepository.findById(id);
 
-            if (user.isPresent()) {
-                return user.get().toSendDTO();
-            }
+        if (!userTeacher.isPresent())
+            throw new UserDoestExistException("usuario com o id " + id);
+
+        Course course = userTeacher.get().getCourse();
+        course.getTeachers().remove(userTeacher.get());
+        cRepository.save(course);
+
+        for (Subject subject : userTeacher.get().getSubjects()) {
+            subject.setTeacher(null);
+            sbRepository.save(subject);
         }
 
-        Optional<Teacher> user = tRepository.findById(id);
+        Project project = userTeacher.get().getProject();
+        project.setTeacher(null);
 
-        if (user.isPresent()) {
-            return user.get().toSendDTO();
-        }
+        pRepository.save(project);
+        cRepository.save(course);
+        tRepository.delete(userTeacher.get());
+    }
 
+    @Override
+    public void deleteStudent(int id) throws UserDoestExistException {
         Optional<Student> userStudent = sRepository.findById(id);
 
-        if (userStudent.isPresent())
-            return userStudent.get().toSendDTO();
+        if (!userStudent.isPresent())
+            throw new UserDoestExistException("usuario com o id " + id);
 
-        throw new UserDoestExistException(id + "");
+        Course course = userStudent.get().getCourse();
+        course.getStudents().remove(userStudent.get());
+
+        for (Grade grade : userStudent.get().getSubjects()) {
+            Subject subject = grade.getSubject();
+            subject.getStudents().remove(grade);
+
+            sbRepository.save(subject);
+            grRepository.delete(grade);
+        }
+
+        Worker worker = userStudent.get().getWorker();
+        Project project = worker.getProject();
+        project.getWorkers().remove(worker);
+
+        cRepository.save(course);
+        pRepository.save(project);
+
+        wRepository.delete(worker);
+        sRepository.delete(userStudent.get());
     }
 
     private int compareName(String name1, String name2) {

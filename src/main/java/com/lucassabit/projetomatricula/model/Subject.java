@@ -12,8 +12,8 @@ import javax.persistence.ManyToOne;
 
 import javax.persistence.OneToMany;
 
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectEditDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectEditDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectSendDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectStudentSendDTO;
 

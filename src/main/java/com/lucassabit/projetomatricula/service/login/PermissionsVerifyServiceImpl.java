@@ -10,7 +10,7 @@ import com.lucassabit.projetomatricula.enumerators.UserType;
 import com.lucassabit.projetomatricula.error.AccessDeniedException;
 import com.lucassabit.projetomatricula.error.login.DoesntExistUserTypeException;
 import com.lucassabit.projetomatricula.error.login.UserDoestExistException;
-import com.lucassabit.projetomatricula.repository.SecretaryRepository;
+import com.lucassabit.projetomatricula.repository.general.user.SecretaryRepository;
 
 @Service
 public class PermissionsVerifyServiceImpl implements PermissionsVerifyService {

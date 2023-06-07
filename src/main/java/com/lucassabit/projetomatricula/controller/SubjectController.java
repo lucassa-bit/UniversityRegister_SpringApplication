@@ -11,17 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.lucassabit.projetomatricula.dto.client.Subject.ChangeGradesDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.RegisterSubjectsDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectEditDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.ChangeGradesDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.RegisterSubjectsDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectEditDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectSendDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectStudentSendDTO;
 import com.lucassabit.projetomatricula.enumerators.UserType;
@@ -52,10 +52,11 @@ public class SubjectController {
         private final String SUBJECT_STUDENT_ADDED = "Adicão do estudante foi realizada com sucesso!";
         private final String SUBJECT_GRADES = "A alteração das notas foi realizada com sucesso!";
 
-        @PostMapping
+        @PostMapping("/course/{course_name}/teacher/{register_code}")
         @ResponseStatus(code = HttpStatus.CREATED)
         public ResponseEntity<String> createNewSubject(Authentication authentication,
-                        @Valid @RequestBody SubjectCreateDTO dto)
+                        @Valid @RequestBody SubjectCreateDTO dto, @PathVariable String register_code,
+                        @PathVariable String course_name)
                         throws TeacherNotFoundException, CourseDoesntExistException, UserDoestExistException,
                         AccessDeniedException,
                         DoesntExistUserTypeException {
@@ -63,13 +64,13 @@ public class SubjectController {
                                 .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                sService.createSubject(dto);
+                sService.createSubject(dto, register_code, course_name);
 
                 return new ResponseEntity<String>(SUBJECT_CREATED, HttpStatus.CREATED);
         }
 
-        @GetMapping
-        public List<SubjectSendDTO> getAllSubjects(Authentication authentication, @RequestParam String course)
+        @GetMapping("/course/{course}")
+        public List<SubjectSendDTO> getAllSubjects(Authentication authentication, @PathVariable String course)
                         throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.STUDENT, UserType.TEACHER });
@@ -78,33 +79,33 @@ public class SubjectController {
                 return sService.getAllSubjects(course);
         }
 
-        @GetMapping("/findByStudent")
+        @GetMapping("/student/{register_code}")
         public List<SubjectStudentSendDTO> getStudentSubjects(Authentication authentication,
-                        @RequestParam String registrationCode)
+                        @PathVariable String register_code)
                         throws StudentNotFoundException, UserDoestExistException, AccessDeniedException,
                         DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.STUDENT });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return sService.getSubjectFromStudent(registrationCode);
+                return sService.getSubjectFromStudent(register_code);
         }
 
-        @GetMapping("/findByTeacher")
+        @GetMapping("/teacher/{register_code}")
         public List<SubjectSendDTO> getTeacherSubjects(Authentication authentication,
-                        @RequestParam String registrationCode)
+                        @PathVariable String register_code)
                         throws StudentNotFoundException, UserDoestExistException, AccessDeniedException,
                         DoesntExistUserTypeException, TeacherNotFoundException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return sService.getSubjectFromTeacher(registrationCode);
+                return sService.getSubjectFromTeacher(register_code);
         }
 
-        @PutMapping("/add")
+        @PatchMapping("/add/student/{register_code}")
         public ResponseEntity<String> addingStudent(Authentication authentication,
-                        @Valid @RequestBody RegisterSubjectsDTO dto)
+                        @Valid @RequestBody RegisterSubjectsDTO dto, @PathVariable String register_code)
                         throws SubjectDoesntExistException, CourseDoesntExistException, TeacherNotFoundException,
                         StudentNotFoundException, UserDoestExistException, AccessDeniedException,
                         DoesntExistUserTypeException {
@@ -112,14 +113,14 @@ public class SubjectController {
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.STUDENT });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                sService.readjusmentRegister(dto);
+                sService.readjusmentRegister(dto, register_code);
 
                 return new ResponseEntity<String>(SUBJECT_STUDENT_ADDED, HttpStatus.OK);
         }
 
-        @PutMapping("/edit_grades")
+        @PatchMapping("/grades/subject/{register_code}")
         public ResponseEntity<String> changingGrades(Authentication authentication,
-                        @Valid @RequestBody List<ChangeGradesDTO> dto)
+                        @Valid @RequestBody List<ChangeGradesDTO> dto, @PathVariable String register_code)
                         throws SubjectDoesntExistException, CourseDoesntExistException, TeacherNotFoundException,
                         StudentNotFoundException, StudentIsNotRegisteredInSubjectException, UserDoestExistException,
                         AccessDeniedException, DoesntExistUserTypeException {
@@ -128,27 +129,28 @@ public class SubjectController {
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
                 for (ChangeGradesDTO elements : dto) {
-                        sService.changeGrades(elements);
+                        sService.changeGrades(elements, register_code);
                 }
 
                 return new ResponseEntity<String>(SUBJECT_GRADES, HttpStatus.OK);
         }
 
-        @PutMapping
-        public ResponseEntity<String> editCourse(Authentication authentication, @Valid @RequestBody SubjectEditDTO dto)
+        @PatchMapping("/{id}")
+        public ResponseEntity<String> editSubject(Authentication authentication, @Valid @RequestBody SubjectEditDTO dto,
+                        @PathVariable int id)
                         throws SubjectDoesntExistException, CourseDoesntExistException, TeacherNotFoundException,
                         UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                sService.editSubject(dto);
+                sService.editSubject(dto, id);
 
                 return new ResponseEntity<String>(SUBJECT_EDITED, HttpStatus.OK);
         }
 
-        @DeleteMapping
-        public ResponseEntity<String> deleteCourse(Authentication authentication, @RequestParam int id)
+        @DeleteMapping("/{id}")
+        public ResponseEntity<String> deleteCourse(Authentication authentication, @PathVariable int id)
                         throws SubjectDoesntExistException, UserDoestExistException, AccessDeniedException,
                         DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays

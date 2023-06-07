@@ -10,18 +10,21 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.lucassabit.projetomatricula.dto.client.SubjectParticipants.SubjectParticipantsCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.SubjectParticipants.SubjectParticipantsEditDTO;
-import com.lucassabit.projetomatricula.dto.client.User.UserCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.User.UserEditDTO;
-import com.lucassabit.projetomatricula.dto.send.SubjectParticipantsSendDTO;
+import com.lucassabit.projetomatricula.dto.client.user.StudentCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.StudentEditDTO;
+import com.lucassabit.projetomatricula.dto.client.user.TeacherCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.TeacherEditDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserEditDTO;
+import com.lucassabit.projetomatricula.dto.send.StudentSendDTO;
+import com.lucassabit.projetomatricula.dto.send.TeacherSendDTO;
 import com.lucassabit.projetomatricula.dto.send.UserSendDTO;
 import com.lucassabit.projetomatricula.enumerators.UserType;
 import com.lucassabit.projetomatricula.error.AccessDeniedException;
@@ -37,7 +40,7 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user")
-public class userController {
+public class UserController {
         @Autowired
         private UserService uServices;
         @Autowired
@@ -47,20 +50,22 @@ public class userController {
         private final String USER_EDITED = "Edicao de usuario realizado com sucesso!";
         private final String USER_DELETED = "Delete de usuario realizado com sucesso!";
 
+        @GetMapping("/me")
+        public UserSendDTO getUsuarioLogado(Authentication authentication)
+                        throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
+
+                return uServices.getUsuarioByLogin(authentication.getName());
+        }
+
         @PostMapping("/secretary")
         @ResponseStatus(code = HttpStatus.CREATED)
         public ResponseEntity<String> createNewSecretary(Authentication authentication,
                         @Valid @RequestBody UserCreateDTO dto)
-                        throws LoginAlreadyExistsException, EncodingPasswordException, UserDoestExistException,
-                        AccessDeniedException, DoesntExistUserTypeException {
-                List<UserType> cargosPermitidos = Arrays
-                                .asList(new UserType[] { UserType.SECRETARY });
-                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
-
+                        throws EncodingPasswordException, LoginAlreadyExistsException {
                 if (dto.getPassword() == null)
                         throw new EncodingPasswordException("Senha possui valor nulo");
 
-                uServices.createNewUsuario(dto);
+                uServices.createNewSecretary(dto);
 
                 return new ResponseEntity<String>(USER_CREATED, HttpStatus.CREATED);
         }
@@ -72,65 +77,54 @@ public class userController {
                                 .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return uServices.pickAllUsers();
+                return uServices.pickAllSecretaries();
         }
 
-        // editar usuario
-        @PutMapping("/secretary")
-        public ResponseEntity<String> editSecretary(Authentication authentication, @Valid @RequestBody UserEditDTO dto)
-                        throws UserDoestExistException, AccessDeniedException, LoginAlreadyExistsException,
-                        DoesntExistUserTypeException {
+        @PatchMapping("/secretary/{id}")
+        public ResponseEntity<String> editSecretary(Authentication authentication, @Valid @RequestBody UserEditDTO dto,
+                        @PathVariable int id) throws UserDoestExistException, AccessDeniedException,
+                        DoesntExistUserTypeException, LoginAlreadyExistsException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                uServices.editarUsuario(dto);
+                uServices.editSecretary(dto, id);
 
                 return new ResponseEntity<String>(USER_EDITED, HttpStatus.OK);
         }
 
-        @GetMapping("/teacher")
-        public List<SubjectParticipantsSendDTO> getAllTeachersByCourse(Authentication authentication,
-                        @RequestParam String course)
-                        throws UserDoestExistException, AccessDeniedException, CourseDoesntExistException,
-                        DoesntExistUserTypeException {
-                List<UserType> cargosPermitidos = Arrays
-                                .asList(new UserType[] { UserType.SECRETARY });
-                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
-
-                return uServices.pickAllUsers(course, UserType.TEACHER);
-        }
-
         @PostMapping("/teacher")
         @ResponseStatus(code = HttpStatus.CREATED)
-        public ResponseEntity<String> createNewTeacher(Authentication authentication,
-                        @Valid @RequestBody SubjectParticipantsCreateDTO dto)
-                        throws LoginAlreadyExistsException, EncodingPasswordException, UserDoestExistException,
-                        AccessDeniedException, CourseDoesntExistException, DoesntExistUserTypeException {
-                List<UserType> cargosPermitidos = Arrays
-                                .asList(new UserType[] { UserType.SECRETARY });
-                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+        public ResponseEntity<String> createNewTeacher(@Valid @RequestBody TeacherCreateDTO dto)
+                        throws EncodingPasswordException, CourseDoesntExistException, LoginAlreadyExistsException {
 
                 if (dto.getPassword() == null)
                         throw new EncodingPasswordException("Senha possui valor nulo");
 
-                uServices.createNewUsuario(dto, UserType.TEACHER);
+                uServices.createNewTeacher(dto);
 
                 return new ResponseEntity<String>(USER_CREATED, HttpStatus.CREATED);
         }
 
-        // editar usuario e professor
-        @PutMapping("/teacher")
-        public ResponseEntity<String> editTeacher(Authentication authentication,
-                        @Valid @RequestBody SubjectParticipantsEditDTO dto)
-                        throws UserDoestExistException, AccessDeniedException, LoginAlreadyExistsException,
-                        EncodingPasswordException, CourseDoesntExistException, DoesntExistUserTypeException {
-
+        @GetMapping("/teacher/course/{course}")
+        public List<TeacherSendDTO> getAllTeachersByCourse(Authentication authentication, @PathVariable String course)
+                        throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
-                                .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
+                                .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                uServices.editarUsuario(dto, UserType.TEACHER);
+                return uServices.pickAllTeachers(course);
+        }
+
+        @PatchMapping("/teacher/{id}")
+        public ResponseEntity<String> editTeacher(Authentication authentication,
+                        @Valid @RequestBody TeacherEditDTO dto, @PathVariable int id)
+                        throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException,
+                        CourseDoesntExistException, LoginAlreadyExistsException {
+                List<UserType> cargosPermitidos = Arrays
+                                .asList(new UserType[] { UserType.SECRETARY });
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+                uServices.editTeacher(dto, id);
 
                 return new ResponseEntity<String>(USER_EDITED, HttpStatus.OK);
         }
@@ -138,75 +132,112 @@ public class userController {
         @PostMapping("/student")
         @ResponseStatus(code = HttpStatus.CREATED)
         public ResponseEntity<String> createNewStudent(Authentication authentication,
-                        @Valid @RequestBody SubjectParticipantsCreateDTO dto)
-                        throws LoginAlreadyExistsException, EncodingPasswordException, UserDoestExistException,
-                        AccessDeniedException, CourseDoesntExistException, DoesntExistUserTypeException {
-                List<UserType> cargosPermitidos = Arrays
-                                .asList(new UserType[] { UserType.SECRETARY });
-                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
-
+                        @Valid @RequestBody StudentCreateDTO dto)
+                        throws EncodingPasswordException, LoginAlreadyExistsException, CourseDoesntExistException {
                 if (dto.getPassword() == null)
                         throw new EncodingPasswordException("Senha possui valor nulo");
 
-                uServices.createNewUsuario(dto, UserType.STUDENT);
+                uServices.createNewStudent(dto);
 
                 return new ResponseEntity<String>(USER_CREATED, HttpStatus.CREATED);
         }
 
-        @GetMapping("/student")
-        public List<SubjectParticipantsSendDTO> getAllStudentsByCourse(Authentication authentication,
-                        @RequestParam String course)
-                        throws UserDoestExistException, AccessDeniedException, CourseDoesntExistException,
-                        DoesntExistUserTypeException {
+        @GetMapping("/student/course/{course}")
+        public List<StudentSendDTO> getAllStudentsByCourse(Authentication authentication,
+                        @PathVariable String course)
+                        throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return uServices.pickAllUsers(course, UserType.STUDENT);
+                return uServices.pickAllStudents(course);
         }
 
-        @PutMapping("/student")
+        @PatchMapping("/student/{id}")
         public ResponseEntity<String> editStudent(Authentication authentication,
-                        @Valid @RequestBody SubjectParticipantsEditDTO dto)
-                        throws UserDoestExistException, AccessDeniedException, LoginAlreadyExistsException,
-                        EncodingPasswordException, CourseDoesntExistException, DoesntExistUserTypeException {
+                        @Valid @RequestBody StudentEditDTO dto, @PathVariable int id)
+                        throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException,
+                        LoginAlreadyExistsException, CourseDoesntExistException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.STUDENT });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                uServices.editarUsuario(dto, UserType.STUDENT);
+                uServices.editStudent(dto, id);
 
                 return new ResponseEntity<String>(USER_EDITED, HttpStatus.OK);
         }
 
-        // pegar usuario por id
-        @GetMapping
-        public UserSendDTO getUsuarioById(Authentication authentication, @RequestParam int findById)
+        @GetMapping("/secretary/{id}")
+        public UserSendDTO getSecretaryById(Authentication authentication, @PathVariable int id)
                         throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
-                UserSendDTO user = vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return uServices.getUsuarioById(findById, user.getUserType());
+                return uServices.getSecretaryById(id);
         }
 
-        // retornar usuario logado
-        @GetMapping("/me")
-        public UserSendDTO getUsuarioLogado(Authentication authentication)
+        @GetMapping("/teacher/{id}")
+        public UserSendDTO getTeacherById(Authentication authentication, @PathVariable int id)
                         throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
+                List<UserType> cargosPermitidos = Arrays
+                                .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                return uServices.getUsuarioByLogin(authentication.getName());
+                return uServices.getTeacherById(id);
         }
 
-        // deletar usuario
-        @DeleteMapping
-        public ResponseEntity<String> deleteUsuario(Authentication authentication, @RequestParam Integer id)
+        @GetMapping("/student/{id}")
+        public UserSendDTO getStudentById(Authentication authentication, @PathVariable int id)
                         throws UserDoestExistException, AccessDeniedException, DoesntExistUserTypeException {
+                List<UserType> cargosPermitidos = Arrays
+                                .asList(new UserType[] { UserType.SECRETARY, UserType.TEACHER });
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+
+                return uServices.getStudentById(id);
+        }
+
+        @DeleteMapping("/secretary/{id}")
+        public ResponseEntity<String> deleteSecretary(Authentication authentication, @PathVariable Integer id)
+                        throws AccessDeniedException, UserDoestExistException, DoesntExistUserTypeException {
+                if (id == 1)
+                        throw new AccessDeniedException();
+
                 List<UserType> cargosPermitidos = Arrays
                                 .asList(new UserType[] { UserType.SECRETARY });
                 vService.PermissionVerify(authentication.getName(), cargosPermitidos);
 
-                uServices.deleteUsuario(id);
+                uServices.deleteSecretary(id);
+
+                return new ResponseEntity<String>(USER_DELETED, HttpStatus.OK);
+        }
+
+        @DeleteMapping("/teacher/{id}")
+        public ResponseEntity<String> deleteTeacher(Authentication authentication, @PathVariable Integer id)
+                        throws AccessDeniedException, UserDoestExistException, DoesntExistUserTypeException {
+                if (id == 1)
+                        throw new AccessDeniedException();
+
+                List<UserType> cargosPermitidos = Arrays
+                                .asList(new UserType[] { UserType.SECRETARY });
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+
+                uServices.deleteTeacher(id);
+
+                return new ResponseEntity<String>(USER_DELETED, HttpStatus.OK);
+        }
+
+        @DeleteMapping("/student/{id}")
+        public ResponseEntity<String> deleteStudent(Authentication authentication, @PathVariable Integer id)
+                        throws AccessDeniedException, UserDoestExistException, DoesntExistUserTypeException {
+                if (id == 1)
+                        throw new AccessDeniedException();
+
+                List<UserType> cargosPermitidos = Arrays
+                                .asList(new UserType[] { UserType.SECRETARY });
+                vService.PermissionVerify(authentication.getName(), cargosPermitidos);
+
+                uServices.deleteStudent(id);
 
                 return new ResponseEntity<String>(USER_DELETED, HttpStatus.OK);
         }

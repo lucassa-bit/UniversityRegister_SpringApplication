@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.lucassabit.projetomatricula.dto.client.Course.CourseCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.Course.CourseEditDTO;
+import com.lucassabit.projetomatricula.dto.client.course.CourseCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.course.CourseEditDTO;
 import com.lucassabit.projetomatricula.dto.send.CourseSendDTO;
 import com.lucassabit.projetomatricula.error.AccessDeniedException;
 import com.lucassabit.projetomatricula.error.course.CourseAlreadyExistsException;
@@ -16,10 +16,10 @@ import com.lucassabit.projetomatricula.model.Course;
 import com.lucassabit.projetomatricula.model.Student;
 import com.lucassabit.projetomatricula.model.Subject;
 import com.lucassabit.projetomatricula.model.Teacher;
-import com.lucassabit.projetomatricula.repository.CourseRepository;
-import com.lucassabit.projetomatricula.repository.StudentRepository;
-import com.lucassabit.projetomatricula.repository.SubjectRepository;
-import com.lucassabit.projetomatricula.repository.TeacherRepository;
+import com.lucassabit.projetomatricula.repository.general.CourseRepository;
+import com.lucassabit.projetomatricula.repository.general.SubjectRepository;
+import com.lucassabit.projetomatricula.repository.general.user.TeacherRepository;
+import com.lucassabit.projetomatricula.repository.student.StudentRepository;
 
 @Service
 public class CourseServiceImpl implements CourseService {
@@ -47,8 +47,8 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public void EditCourse(CourseEditDTO dto) throws CourseAlreadyExistsException, CourseDoesntExistException {
-        Optional<Course> value = cRepository.findById(dto.getId());
+    public void EditCourse(CourseEditDTO dto, int course_id) throws CourseAlreadyExistsException, CourseDoesntExistException {
+        Optional<Course> value = cRepository.findById(course_id);
 
         if (!value.isPresent())
             throw new CourseDoesntExistException(dto.getName());

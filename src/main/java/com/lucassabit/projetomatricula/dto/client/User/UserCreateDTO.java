@@ -1,4 +1,4 @@
-package com.lucassabit.projetomatricula.dto.client.User;
+package com.lucassabit.projetomatricula.dto.client.user;
 
 import org.springframework.format.annotation.DateTimeFormat;
 

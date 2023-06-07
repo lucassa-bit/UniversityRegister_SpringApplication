@@ -1,4 +1,4 @@
-package com.lucassabit.projetomatricula.repository;
+package com.lucassabit.projetomatricula.repository.general.user;
 
 import javax.transaction.Transactional;
 

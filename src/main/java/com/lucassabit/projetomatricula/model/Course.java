@@ -2,8 +2,8 @@ package com.lucassabit.projetomatricula.model;
 
 import java.util.List;
 
-import com.lucassabit.projetomatricula.dto.client.Course.CourseCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.Course.CourseEditDTO;
+import com.lucassabit.projetomatricula.dto.client.course.CourseCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.course.CourseEditDTO;
 import com.lucassabit.projetomatricula.dto.send.CourseSendDTO;
 
 import javax.persistence.Column;

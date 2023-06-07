@@ -1,26 +1,12 @@
-package com.lucassabit.projetomatricula.dto.client.Subject;
-
-import javax.validation.constraints.NotBlank;
+package com.lucassabit.projetomatricula.dto.client.subject;
 
 public class ChangeGradesDTO {
-    @NotBlank(message = "Erro na atualização das notas: valor em branco/nulo (matricula do estudante)")
-    private String registerCodeStudent;
-    @NotBlank(message = "Erro na atualização das notas: valor em branco/nulo (matricula da disciplina)")
-    private String registerCodeSubject;
+    private String student_code;
     private Double grade_1;
     private Double grade_2;
     private Double final_grade;
 
     public ChangeGradesDTO() {
-
-    }
-
-    public String getRegisterCodeStudent() {
-        return registerCodeStudent;
-    }
-
-    public String getRegisterCodeSubject() {
-        return registerCodeSubject;
     }
 
     public Double getGrade_1() {
@@ -33,6 +19,10 @@ public class ChangeGradesDTO {
 
     public Double getFinal_grade() {
         return final_grade;
+    }
+
+    public String getStudent_code() {
+        return student_code;
     }
 
 }

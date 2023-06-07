@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.lucassabit.projetomatricula.data.UserDataDetails;
 import com.lucassabit.projetomatricula.model.UserParent;
-import com.lucassabit.projetomatricula.repository.GeneralUserRepository;
+import com.lucassabit.projetomatricula.repository.general.user.GeneralUserRepository;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {

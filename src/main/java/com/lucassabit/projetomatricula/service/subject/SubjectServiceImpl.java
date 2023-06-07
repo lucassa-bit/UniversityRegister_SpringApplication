@@ -6,10 +6,10 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.lucassabit.projetomatricula.dto.client.Subject.ChangeGradesDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.RegisterSubjectsDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.Subject.SubjectEditDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.ChangeGradesDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.RegisterSubjectsDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.SubjectEditDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectSendDTO;
 import com.lucassabit.projetomatricula.dto.send.SubjectStudentSendDTO;
 import com.lucassabit.projetomatricula.error.course.CourseDoesntExistException;
@@ -22,11 +22,11 @@ import com.lucassabit.projetomatricula.model.Grade;
 import com.lucassabit.projetomatricula.model.Student;
 import com.lucassabit.projetomatricula.model.Subject;
 import com.lucassabit.projetomatricula.model.Teacher;
-import com.lucassabit.projetomatricula.repository.CourseRepository;
-import com.lucassabit.projetomatricula.repository.GradeRepository;
-import com.lucassabit.projetomatricula.repository.StudentRepository;
-import com.lucassabit.projetomatricula.repository.SubjectRepository;
-import com.lucassabit.projetomatricula.repository.TeacherRepository;
+import com.lucassabit.projetomatricula.repository.general.CourseRepository;
+import com.lucassabit.projetomatricula.repository.general.GradeRepository;
+import com.lucassabit.projetomatricula.repository.general.SubjectRepository;
+import com.lucassabit.projetomatricula.repository.general.user.TeacherRepository;
+import com.lucassabit.projetomatricula.repository.student.StudentRepository;
 
 @Service
 public class SubjectServiceImpl implements SubjectService {
@@ -42,14 +42,13 @@ public class SubjectServiceImpl implements SubjectService {
     private CourseRepository cRepository;
 
     @Override
-    public void createSubject(SubjectCreateDTO dto) throws TeacherNotFoundException, CourseDoesntExistException {
-        Optional<Teacher> teacher = dto.getTeacher() != null && !dto.getTeacher().isEmpty()
-                ? tRepository.findByRegisterCode(dto.getTeacher())
-                : null;
-        Optional<Course> course = cRepository.findByName(dto.getCourse());
+    public void createSubject(SubjectCreateDTO dto, String teacher_code, String course_name)
+            throws TeacherNotFoundException, CourseDoesntExistException {
+        Optional<Teacher> teacher = tRepository.findByRegisterCode(teacher_code);
+        Optional<Course> course = cRepository.findByName(course_name);
 
-        if (teacher != null && !teacher.isPresent())
-            throw new TeacherNotFoundException(dto.getTeacher());
+        if (!teacher.isPresent())
+            throw new TeacherNotFoundException(teacher_code);
         if (!course.isPresent())
             throw new CourseDoesntExistException(dto.getCourse());
 
@@ -78,33 +77,33 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
-    public List<SubjectStudentSendDTO> getSubjectFromStudent(String registrationCodeStudent)
+    public List<SubjectStudentSendDTO> getSubjectFromStudent(String student_code)
             throws StudentNotFoundException {
-        Optional<Student> student = stRepository.findByRegisterCode(registrationCodeStudent);
+        Optional<Student> student = stRepository.findByRegisterCode(student_code);
 
         if (!student.isPresent())
-            throw new StudentNotFoundException("com código de registro " + registrationCodeStudent);
+            throw new StudentNotFoundException("com código de registro " + student_code);
 
         return student.get().getSubjects().parallelStream().map(
                 (value) -> value.getSubject().toSubjectStudentDTO(student.get(), value)).toList();
     }
 
     @Override
-    public List<SubjectSendDTO> getSubjectFromTeacher(String registrationCodeTeacher)
+    public List<SubjectSendDTO> getSubjectFromTeacher(String teacher_code)
             throws TeacherNotFoundException {
-        Optional<Teacher> teacher = tRepository.findByRegisterCode(registrationCodeTeacher);
+        Optional<Teacher> teacher = tRepository.findByRegisterCode(teacher_code);
 
         if (!teacher.isPresent())
-            throw new TeacherNotFoundException("com código de registro " + registrationCodeTeacher);
+            throw new TeacherNotFoundException("com código de registro " + teacher_code);
 
         return teacher.get().getSubjects().parallelStream().map((value) -> value.toSendDTO()).toList();
     }
 
     @Override
-    public void editSubject(SubjectEditDTO dto)
+    public void editSubject(SubjectEditDTO dto, int subject_id)
             throws SubjectDoesntExistException, CourseDoesntExistException, TeacherNotFoundException {
-        System.out.println(dto.getId());
-        Optional<Subject> subject = sRepository.findById(dto.getId());
+        System.out.println(subject_id);
+        Optional<Subject> subject = sRepository.findById(subject_id);
         if (!subject.isPresent())
             throw new SubjectDoesntExistException(dto.getName());
 
@@ -158,12 +157,12 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
-    public void readjusmentRegister(RegisterSubjectsDTO dto)
+    public void readjusmentRegister(RegisterSubjectsDTO dto, String student_code)
             throws StudentNotFoundException {
-        Optional<Student> studentOptional = stRepository.findByRegisterCode(dto.getRegisterCodeStudent());
+        Optional<Student> studentOptional = stRepository.findByRegisterCode(student_code);
 
         if (!studentOptional.isPresent())
-            throw new StudentNotFoundException("com código de registro " + dto.getRegisterCodeStudent());
+            throw new StudentNotFoundException("com código de registro " + student_code);
 
         Student student = studentOptional.get();
 
@@ -200,22 +199,22 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
-    public void changeGrades(ChangeGradesDTO dto)
+    public void changeGrades(ChangeGradesDTO dto, String subject_code)
             throws StudentNotFoundException, StudentIsNotRegisteredInSubjectException {
-        Optional<Student> student = stRepository.findByRegisterCode(dto.getRegisterCodeStudent());
+        Optional<Student> student = stRepository.findByRegisterCode(dto.getStudent_code());
 
         if (!student.isPresent())
-            throw new StudentNotFoundException("com código de registro " + dto.getRegisterCodeStudent());
+            throw new StudentNotFoundException("com código de registro " + dto.getStudent_code());
 
-        List<Grade> gradeList = student.get().getSubjects().parallelStream()
-                .filter((value) -> value.getSubject().getRegisterCode().equals(dto.getRegisterCodeSubject())).toList();
+        Optional<Grade> grade = student.get().getSubjects().parallelStream()
+                .filter((value) -> value.getSubject().getRegisterCode().equals(subject_code)).findFirst();
 
-        if (gradeList.isEmpty())
+        if (!grade.isPresent())
             throw new StudentIsNotRegisteredInSubjectException(
-                    "com código de registro " + dto.getRegisterCodeStudent());
+                    "com código de registro " + subject_code);
 
-        Grade grade = gradeList.get(0).fromGradeDTO(dto);
-        gRepository.save(grade);
+        grade.get().fromGradeDTO(dto);
+        gRepository.save(grade.get());
     }
 
     public String repeatValue(int id, int repeat) {

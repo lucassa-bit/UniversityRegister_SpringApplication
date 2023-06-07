@@ -15,7 +15,7 @@ import javax.persistence.InheritanceType;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.lucassabit.projetomatricula.dto.client.User.UserCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserCreateDTO;
 import com.lucassabit.projetomatricula.dto.send.UserSendDTO;
 import com.lucassabit.projetomatricula.enumerators.UserType;
 import com.lucassabit.projetomatricula.error.login.EncodingPasswordException;

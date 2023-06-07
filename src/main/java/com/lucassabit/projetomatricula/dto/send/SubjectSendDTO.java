@@ -6,7 +6,7 @@ public class SubjectSendDTO {
     private Integer id;
     private String name;
     private String teacher;
-    private List<SubjectParticipantsSendDTO> students;
+    private List<StudentSendDTO> students;
     private String course;
     private String registerCode;
     private String dayWeek1;
@@ -14,7 +14,7 @@ public class SubjectSendDTO {
     private String dayWeek2;
     private String classTime2;
 
-    public SubjectSendDTO(Integer id, String name, String teacher, List<SubjectParticipantsSendDTO> students,
+    public SubjectSendDTO(Integer id, String name, String teacher, List<StudentSendDTO> students,
             String course, String registerCode, String dayWeek1, String classTime1, String dayWeek2,
             String classTime2) {
         this.id = id;
@@ -41,7 +41,7 @@ public class SubjectSendDTO {
         return teacher;
     }
 
-    public List<SubjectParticipantsSendDTO> getStudents() {
+    public List<StudentSendDTO> getStudents() {
         return students;
     }
 

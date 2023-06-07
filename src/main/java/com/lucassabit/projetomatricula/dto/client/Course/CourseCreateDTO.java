@@ -1,4 +1,4 @@
-package com.lucassabit.projetomatricula.dto.client.Course;
+package com.lucassabit.projetomatricula.dto.client.course;
 
 import javax.validation.constraints.NotBlank;
 

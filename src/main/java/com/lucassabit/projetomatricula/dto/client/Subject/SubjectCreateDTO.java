@@ -1,4 +1,4 @@
-package com.lucassabit.projetomatricula.dto.client.Subject;
+package com.lucassabit.projetomatricula.dto.client.subject;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
@@ -8,7 +8,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 public class SubjectCreateDTO {
     @NotBlank(message = "Erro na criação da disciplina: valor em branco/nulo (nome)")
     private String name;
-    private String teacher = "";
     @NotBlank(message = "Erro na criação da disciplina: valor em branco/nulo (curso)")
     private String course;
 
@@ -31,10 +30,6 @@ public class SubjectCreateDTO {
 
     public String getName() {
         return name;
-    }
-
-    public String getTeacher() {
-        return teacher;
     }
 
     public String getCourse() {

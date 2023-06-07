@@ -12,13 +12,13 @@ public class SubjectStudentSendDTO {
     private String dayWeek2;
     private String classTime2;
 
-    private SubjectParticipantsSendDTO student;
+    private StudentSendDTO student;
 
     private Double grade_1;
     private Double grade_2;
     private Double final_grade;
 
-    public SubjectStudentSendDTO(Integer id, String name, String teacher, SubjectParticipantsSendDTO student,
+    public SubjectStudentSendDTO(Integer id, String name, String teacher, StudentSendDTO student,
             String course, String registerCode, String dayWeek1, String classTime1, String dayWeek2, String classTime2,
             Double grade_1, Double grade_2, Double final_grade) {
         this.id = id;
@@ -48,7 +48,7 @@ public class SubjectStudentSendDTO {
         return teacher;
     }
 
-    public SubjectParticipantsSendDTO getStudent() {
+    public StudentSendDTO getStudent() {
         return student;
     }
 

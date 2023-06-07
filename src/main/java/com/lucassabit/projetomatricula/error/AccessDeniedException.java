@@ -10,4 +10,8 @@ public class AccessDeniedException extends Exception {
 	public AccessDeniedException() {
 		super(ACESSO_NEGADO);
 	}
+
+	public AccessDeniedException(String message) {
+		super(ACESSO_NEGADO + " " + message);
+	}
 }

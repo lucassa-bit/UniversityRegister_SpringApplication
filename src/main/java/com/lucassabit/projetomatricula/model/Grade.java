@@ -6,7 +6,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
-import com.lucassabit.projetomatricula.dto.client.Subject.ChangeGradesDTO;
+import com.lucassabit.projetomatricula.dto.client.subject.ChangeGradesDTO;
 
 @Entity
 public class Grade {

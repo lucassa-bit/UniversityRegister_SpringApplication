@@ -8,8 +8,8 @@ import javax.persistence.Entity;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.lucassabit.projetomatricula.dto.client.User.UserCreateDTO;
-import com.lucassabit.projetomatricula.dto.client.User.UserEditDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserCreateDTO;
+import com.lucassabit.projetomatricula.dto.client.user.UserEditDTO;
 import com.lucassabit.projetomatricula.dto.send.UserSendDTO;
 import com.lucassabit.projetomatricula.enumerators.UserType;
 import com.lucassabit.projetomatricula.error.login.EncodingPasswordException;
