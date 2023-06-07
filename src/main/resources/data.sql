@@ -19,7 +19,7 @@ Values (
         'Administrador',
         '$2a$10$bHbvyQT1px0uBdPt.oy8g.4ZYxZxsRJlv3YIk6cxzzYU667o9DpGq',
         0
-    ) ON CONFLICT (id) DO NOTHING;
+    );
 
 INSERT INTO course (id, name)
-Values (1, 'Sem curso') ON CONFLICT (id) DO NOTHING; 
+Values (1, 'Sem curso'); 
